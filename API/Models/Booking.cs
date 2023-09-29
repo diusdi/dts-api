@@ -14,8 +14,11 @@ namespace API.Models
         [Column("remarks", TypeName = "nvarchar(MAX)")]
         public string Remarks { get; set; }
         [Column("room_guid")]
-        public Guid RoodGuid { get; set; }
+        public Guid RoomGuid { get; set; }
         [Column("employee_guid")]
         public Guid EmployeeGuid { get; set; }
+
+        public Employee? Employee { get; set; }
+        public Room? Room { get; set; }
     }
 }
