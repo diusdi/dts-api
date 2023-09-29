@@ -10,7 +10,7 @@ public class EducationController : ControllerBase
 {
     private readonly IEducationRepository _educationRepository;
 
-    public EducationController(IEducationRepository EducationRepository)
+    public EducationController(IEducationRepository educationRepository)
     {
         _educationRepository = educationRepository;
     }
