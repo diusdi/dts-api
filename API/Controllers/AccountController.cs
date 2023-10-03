@@ -1,7 +1,8 @@
 ﻿using API.Contracts;
+using API.DTOs.Accounts;
 using API.Models;
-using API.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace API.Controllers;
 
@@ -25,7 +26,8 @@ public class AccountController : ControllerBase
             return NotFound("Data Not Found");
         }
 
-        return Ok(result);
+        var data = result.Select(x => (AccountDto)x);
+        return Ok(data);
     }
 
     [HttpGet("{guid}")]
@@ -36,42 +38,59 @@ public class AccountController : ControllerBase
         {
             return NotFound("Id Not Found");
         }
-        return Ok(result);
+        return Ok((AccountDto)result);
     }
 
     [HttpPost]
-    public IActionResult Create(Account account)
+    public IActionResult Create(CreateAccountDto accountDto)
     {
-        var result = _accountRepository.Create(account);
+        var result = _accountRepository.Create(accountDto);
         if (result is null)
         {
             return BadRequest("Failed to create data");
         }
 
-        return Ok(result);
+        return Ok((AccountDto)result);
     }
 
     [HttpPut]
-    public IActionResult Update(Account account)
+    public IActionResult Update(AccountDto accountDto)
     {
-        var result = _accountRepository.Update(account);
+        var entitiy = _accountRepository.GetByGuid(accountDto.Guid);
+
+        if (entitiy is null)
+        {
+            return NotFound("Id Not Found");
+        }
+
+        Account toUpdate = accountDto;
+        toUpdate.CreatedDate = entitiy.CreatedDate;
+
+        var result = _accountRepository.Update(toUpdate);
+
         if (!result)
         {
             return BadRequest("Failed to update data");
         }
 
-        return Ok(result);
+        return Ok("Data Updated");
     }
 
     [HttpDelete]
-    public IActionResult Delete(Account account)
+    public IActionResult Delete(Guid guid)
     {
-        var result = _accountRepository.Delete(account);
+        var entity = _accountRepository.GetByGuid(guid);
+        if (entity is null)
+        {
+            return NotFound("Id Not Found");
+        }
+
+        var result = _accountRepository.Delete(entity);
         if (!result)
         {
             return BadRequest("Failed to delete data");
         }
 
-        return Ok(result);
+        return Ok("Data Deleted");
     }
 }
