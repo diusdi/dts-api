@@ -1,7 +1,8 @@
 ﻿using API.Contracts;
+using API.DTOs.Employees;
 using API.Models;
-using API.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace API.Controllers;
 
@@ -25,7 +26,8 @@ public class EmployeeController : ControllerBase
             return NotFound("Data Not Found");
         }
 
-        return Ok(result);
+        var data = result.Select(x => (EmployeeDto)x);
+        return Ok(data);
     }
 
     [HttpGet("{guid}")]
@@ -36,42 +38,59 @@ public class EmployeeController : ControllerBase
         {
             return NotFound("Id Not Found");
         }
-        return Ok(result);
+        return Ok((EmployeeDto)result);
     }
 
     [HttpPost]
-    public IActionResult Create(Employee employee)
+    public IActionResult Create(CreateEmployeeDto employeeDto)
     {
-        var result = _employeeRepository.Create(employee);
+        var result = _employeeRepository.Create(employeeDto);
         if (result is null)
         {
             return BadRequest("Failed to create data");
         }
 
-        return Ok(result);
+        return Ok((EmployeeDto)result);
     }
 
     [HttpPut]
-    public IActionResult Update(Employee employee)
+    public IActionResult Update(EmployeeDto employeeDto)
     {
-        var result = _employeeRepository.Update(employee);
+        var entitiy = _employeeRepository.GetByGuid(employeeDto.Guid);
+
+        if (entitiy is null)
+        {
+            return NotFound("Id Not Found");
+        }
+
+        Employee toUpdate = employeeDto;
+        toUpdate.CreatedDate = entitiy.CreatedDate;
+
+        var result = _employeeRepository.Update(toUpdate);
+
         if (!result)
         {
             return BadRequest("Failed to update data");
         }
 
-        return Ok(result);
+        return Ok("Data Updated");
     }
 
     [HttpDelete]
-    public IActionResult Delete(Employee employee)
+    public IActionResult Delete(Guid guid)
     {
-        var result = _employeeRepository.Delete(employee);
+        var entity = _employeeRepository.GetByGuid(guid);
+        if (entity is null)
+        {
+            return NotFound("Id Not Found");
+        }
+
+        var result = _employeeRepository.Delete(entity);
         if (!result)
         {
             return BadRequest("Failed to delete data");
         }
 
-        return Ok(result);
+        return Ok("Data Deleted");
     }
 }

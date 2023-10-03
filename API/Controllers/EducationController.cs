@@ -1,6 +1,8 @@
 ﻿using API.Contracts;
+using API.DTOs.Educations;
 using API.Models;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace API.Controllers;
 
@@ -24,7 +26,8 @@ public class EducationController : ControllerBase
             return NotFound("Data Not Found");
         }
 
-        return Ok(result);
+        var data = result.Select(x => (EducationDto)x);
+        return Ok(data);
     }
 
     [HttpGet("{guid}")]
@@ -35,42 +38,59 @@ public class EducationController : ControllerBase
         {
             return NotFound("Id Not Found");
         }
-        return Ok(result);
+        return Ok((EducationDto)result);
     }
 
     [HttpPost]
-    public IActionResult Create(Education Education)
+    public IActionResult Create(CreateEducationDto educationDto)
     {
-        var result = _educationRepository.Create(Education);
+        var result = _educationRepository.Create(educationDto);
         if (result is null)
         {
             return BadRequest("Failed to create data");
         }
 
-        return Ok(result);
+        return Ok((EducationDto)result);
     }
 
     [HttpPut]
-    public IActionResult Update(Education Education)
+    public IActionResult Update(EducationDto educationDto)
     {
-        var result = _educationRepository.Update(Education);
+        var entitiy = _educationRepository.GetByGuid(educationDto.Guid);
+
+        if (entitiy is null)
+        {
+            return NotFound("Id Not Found");
+        }
+
+        Education toUpdate = educationDto;
+        toUpdate.CreatedDate = entitiy.CreatedDate;
+
+        var result = _educationRepository.Update(toUpdate);
+
         if (!result)
         {
             return BadRequest("Failed to update data");
         }
 
-        return Ok(result);
+        return Ok("Data Updated");
     }
 
     [HttpDelete]
-    public IActionResult Delete(Education Education)
+    public IActionResult Delete(Guid guid)
     {
-        var result = _educationRepository.Delete(Education);
+        var entity = _educationRepository.GetByGuid(guid);
+        if (entity is null)
+        {
+            return NotFound("Id Not Found");
+        }
+
+        var result = _educationRepository.Delete(entity);
         if (!result)
         {
             return BadRequest("Failed to delete data");
         }
 
-        return Ok(result);
+        return Ok("Data Deleted");
     }
 }
