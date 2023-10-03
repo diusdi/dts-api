@@ -1,7 +1,8 @@
 ﻿using API.Contracts;
+using API.DTOs.AccountRoles;
 using API.Models;
-using API.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace API.Controllers;
 
@@ -25,7 +26,8 @@ public class AccountRoleController : ControllerBase
             return NotFound("Data Not Found");
         }
 
-        return Ok(result);
+        var data = result.Select(x => (AccountRoleDto)x);
+        return Ok(data);
     }
 
     [HttpGet("{guid}")]
@@ -36,42 +38,59 @@ public class AccountRoleController : ControllerBase
         {
             return NotFound("Id Not Found");
         }
-        return Ok(result);
+        return Ok((AccountRoleDto)result);
     }
 
     [HttpPost]
-    public IActionResult Create(AccountRole accountRole)
+    public IActionResult Create(CreateAccountRoleDto accountRoleDto)
     {
-        var result = _accountRoleRepository.Create(accountRole);
+        var result = _accountRoleRepository.Create(accountRoleDto);
         if (result is null)
         {
             return BadRequest("Failed to create data");
         }
 
-        return Ok(result);
+        return Ok((AccountRoleDto)result);
     }
 
     [HttpPut]
-    public IActionResult Update(AccountRole accountRole)
+    public IActionResult Update(AccountRoleDto accountRoleDto)
     {
-        var result = _accountRoleRepository.Update(accountRole);
+        var entitiy = _accountRoleRepository.GetByGuid(accountRoleDto.Guid);
+
+        if (entitiy is null)
+        {
+            return NotFound("Id Not Found");
+        }
+
+        AccountRole toUpdate = accountRoleDto;
+        toUpdate.CreatedDate = entitiy.CreatedDate;
+
+        var result = _accountRoleRepository.Update(toUpdate);
+
         if (!result)
         {
             return BadRequest("Failed to update data");
         }
 
-        return Ok(result);
+        return Ok("Data Updated");
     }
 
     [HttpDelete]
-    public IActionResult Delete(AccountRole accountRole)
+    public IActionResult Delete(Guid guid)
     {
-        var result = _accountRoleRepository.Delete(accountRole);
+        var entity = _accountRoleRepository.GetByGuid(guid);
+        if (entity is null)
+        {
+            return NotFound("Id Not Found");
+        }
+
+        var result = _accountRoleRepository.Delete(entity);
         if (!result)
         {
             return BadRequest("Failed to delete data");
         }
 
-        return Ok(result);
+        return Ok("Data Deleted");
     }
 }
