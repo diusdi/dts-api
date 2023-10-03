@@ -1,6 +1,8 @@
 ﻿using API.Contracts;
+using API.DTOs.Universities;
 using API.Models;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace API.Controllers;
 
@@ -24,7 +26,8 @@ public class UniversityController : ControllerBase
             return NotFound("Data Not Found");
         }
 
-        return Ok(result);
+        var data = result.Select(x => (UniversityDto)x);
+        return Ok(data);
     }
 
     [HttpGet("{guid}")]
@@ -35,42 +38,59 @@ public class UniversityController : ControllerBase
         {
             return NotFound("Id Not Found");
         }
-        return Ok(result);
+        return Ok((UniversityDto)result);
     }
 
     [HttpPost]
-    public IActionResult Create(University university)
+    public IActionResult Create(CreateUniversityDto universityDto)
     {
-        var result = _universityRepository.Create(university);
+        var result = _universityRepository.Create(universityDto);
         if (result is null)
         {
             return BadRequest("Failed to create data");
         }
 
-        return Ok(result);
+        return Ok((UniversityDto)result);
     }
 
     [HttpPut]
-    public IActionResult Update(University university)
+    public IActionResult Update(UniversityDto universityDto)
     {
-        var result = _universityRepository.Update(university);
+        var entitiy = _universityRepository.GetByGuid(universityDto.Guid);
+
+        if (entitiy is null)
+        {
+            return NotFound("Id Not Found");
+        }
+
+        University toUpdate = universityDto;
+        toUpdate.CreatedDate = entitiy.CreatedDate;
+
+        var result = _universityRepository.Update(toUpdate);
+
         if (!result)
         {
             return BadRequest("Failed to update data");
         }
 
-        return Ok(result);
+        return Ok("Data Updated");
     }
 
     [HttpDelete]
-    public IActionResult Delete(University university)
+    public IActionResult Delete(Guid guid)
     {
-        var result = _universityRepository.Delete(university);
+        var entity = _universityRepository.GetByGuid(guid);
+        if (entity is null)
+        {
+            return NotFound("Id Not Found");
+        }
+
+        var result = _universityRepository.Delete(entity);
         if (!result)
         {
             return BadRequest("Failed to delete data");
         }
 
-        return Ok(result);
+        return Ok("Data Deleted");
     }
 }
