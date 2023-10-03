@@ -9,14 +9,14 @@ public class RoomDto
     public int Floor { get; set; }
     public int Capacity { get; set; }
 
-    public static explicit operator RoomDto(Room Room)
+    public static explicit operator RoomDto(Room room)
     {
         return new RoomDto
         {
-            Guid = Room.Guid,
-            Name = Room.Name,
-            Floor = Room.Floor,
-            Capacity = Room.Capacity
+            Guid = room.Guid,
+            Name = room.Name,
+            Floor = room.Floor,
+            Capacity = room.Capacity
         };
     }
 

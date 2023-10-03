@@ -15,6 +15,8 @@ public class CreateRoomDto
             Name = createRoomDto.Name,
             Floor = createRoomDto.Floor,
             Capacity = createRoomDto.Capacity,
+            CreatedDate = DateTime.Now,
+            ModifiedDate = DateTime.Now
         };
     }
 }
