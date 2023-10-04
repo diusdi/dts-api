@@ -1,8 +1,9 @@
-﻿using API.Contracts;
+﻿using System.Net;
+using API.Contracts;
 using API.DTOs.AccountRoles;
 using API.Models;
+using API.Utilities.Handlers;
 using Microsoft.AspNetCore.Mvc;
-using System;
 
 namespace API.Controllers;
 
@@ -23,11 +24,17 @@ public class AccountRoleController : ControllerBase
         var result = _accountRoleRepository.GetAll();
         if (!result.Any())
         {
-            return NotFound("Data Not Found");
+            return NotFound(new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status404NotFound,
+                Status = HttpStatusCode.NotFound.ToString(),
+                Message = "Data Not Found"
+            });
         }
 
         var data = result.Select(x => (AccountRoleDto)x);
-        return Ok(data);
+
+        return Ok(new ResponseOKHandler<IEnumerable<AccountRoleDto>>(data));
     }
 
     [HttpGet("{guid}")]
@@ -36,61 +43,103 @@ public class AccountRoleController : ControllerBase
         var result = _accountRoleRepository.GetByGuid(guid);
         if (result is null)
         {
-            return NotFound("Id Not Found");
+            return NotFound(new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status404NotFound,
+                Status = HttpStatusCode.NotFound.ToString(),
+                Message = "Data Not Found"
+            });
         }
-        return Ok((AccountRoleDto)result);
+
+        return Ok(new ResponseOKHandler<AccountRoleDto>((AccountRoleDto)result));
     }
 
     [HttpPost]
     public IActionResult Create(CreateAccountRoleDto accountRoleDto)
     {
-        var result = _accountRoleRepository.Create(accountRoleDto);
-        if (result is null)
+        try
         {
-            return BadRequest("Failed to create data");
-        }
+            AccountRole toCreate = accountRoleDto;
+            var result = _accountRoleRepository.Create(toCreate);
 
-        return Ok((AccountRoleDto)result);
+            return Ok(new ResponseOKHandler<AccountRoleDto>((AccountRoleDto)result));
+        }
+        catch (ExceptionHandler ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = "Failed to create data",
+                Error = ex.Message
+            });
+        }
     }
 
     [HttpPut]
     public IActionResult Update(AccountRoleDto accountRoleDto)
     {
-        var entitiy = _accountRoleRepository.GetByGuid(accountRoleDto.Guid);
-
-        if (entitiy is null)
+        try
         {
-            return NotFound("Id Not Found");
+            var entity = _accountRoleRepository.GetByGuid(accountRoleDto.Guid);
+            if (entity is null)
+            {
+                return NotFound(new ResponseErrorHandler
+                {
+                    Code = StatusCodes.Status404NotFound,
+                    Status = HttpStatusCode.NotFound.ToString(),
+                    Message = "Data Not Found"
+                });
+            }
+
+            AccountRole toUpdate = accountRoleDto;
+            toUpdate.CreatedDate = entity.CreatedDate;
+
+            _accountRoleRepository.Update(toUpdate);
+
+            return Ok(new ResponseOKHandler<string>("Data Updated"));
         }
-
-        AccountRole toUpdate = accountRoleDto;
-        toUpdate.CreatedDate = entitiy.CreatedDate;
-
-        var result = _accountRoleRepository.Update(toUpdate);
-
-        if (!result)
+        catch (ExceptionHandler ex)
         {
-            return BadRequest("Failed to update data");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = "Failed to create data",
+                Error = ex.Message
+            });
         }
-
-        return Ok("Data Updated");
     }
 
-    [HttpDelete]
+    [HttpDelete("{guid}")]
     public IActionResult Delete(Guid guid)
     {
-        var entity = _accountRoleRepository.GetByGuid(guid);
-        if (entity is null)
+        try
         {
-            return NotFound("Id Not Found");
-        }
+            var entity = _accountRoleRepository.GetByGuid(guid);
+            if (entity is null)
+            {
+                return NotFound(new ResponseErrorHandler
+                {
+                    Code = StatusCodes.Status404NotFound,
+                    Status = HttpStatusCode.NotFound.ToString(),
+                    Message = "Data Not Found"
+                });
+            }
 
-        var result = _accountRoleRepository.Delete(entity);
-        if (!result)
+            _accountRoleRepository.Delete(entity);
+
+            return Ok(new ResponseOKHandler<string>("Data Deleted"));
+        }
+        catch (ExceptionHandler ex)
         {
-            return BadRequest("Failed to delete data");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = "Failed to create data",
+                Error = ex.Message
+            });
         }
-
-        return Ok("Data Deleted");
     }
 }
