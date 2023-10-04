@@ -12,7 +12,6 @@ public class CreateEmployeeValidator : AbstractValidator<CreateEmployeeDto>
 
         RuleFor(e => e.BirthDate)
            .NotEmpty();
-        //.LessThanOrEqualTo("01/01/2003"); // 18 years old
 
         RuleFor(e => e.Gender)
            .NotEmpty()
