@@ -1,8 +1,9 @@
-﻿using API.Contracts;
+﻿using System.Net;
+using API.Contracts;
 using API.DTOs.Accounts;
 using API.Models;
+using API.Utilities.Handlers;
 using Microsoft.AspNetCore.Mvc;
-using System;
 
 namespace API.Controllers;
 
@@ -23,11 +24,17 @@ public class AccountController : ControllerBase
         var result = _accountRepository.GetAll();
         if (!result.Any())
         {
-            return NotFound("Data Not Found");
+            return NotFound(new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status404NotFound,
+                Status = HttpStatusCode.NotFound.ToString(),
+                Message = "Data Not Found"
+            });
         }
 
         var data = result.Select(x => (AccountDto)x);
-        return Ok(data);
+
+        return Ok(new ResponseOKHandler<IEnumerable<AccountDto>>(data));
     }
 
     [HttpGet("{guid}")]
@@ -36,61 +43,103 @@ public class AccountController : ControllerBase
         var result = _accountRepository.GetByGuid(guid);
         if (result is null)
         {
-            return NotFound("Id Not Found");
+            return NotFound(new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status404NotFound,
+                Status = HttpStatusCode.NotFound.ToString(),
+                Message = "Data Not Found"
+            });
         }
-        return Ok((AccountDto)result);
+
+        return Ok(new ResponseOKHandler<AccountDto>((AccountDto)result));
     }
 
     [HttpPost]
     public IActionResult Create(CreateAccountDto accountDto)
     {
-        var result = _accountRepository.Create(accountDto);
-        if (result is null)
+        try
         {
-            return BadRequest("Failed to create data");
-        }
+            Account toCreate = accountDto;
+            var result = _accountRepository.Create(toCreate);
 
-        return Ok((AccountDto)result);
+            return Ok(new ResponseOKHandler<AccountDto>((AccountDto)result));
+        }
+        catch (ExceptionHandler ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = "Failed to create data",
+                Error = ex.Message
+            });
+        }
     }
 
     [HttpPut]
     public IActionResult Update(AccountDto accountDto)
     {
-        var entitiy = _accountRepository.GetByGuid(accountDto.Guid);
-
-        if (entitiy is null)
+        try
         {
-            return NotFound("Id Not Found");
+            var entity = _accountRepository.GetByGuid(accountDto.Guid);
+            if (entity is null)
+            {
+                return NotFound(new ResponseErrorHandler
+                {
+                    Code = StatusCodes.Status404NotFound,
+                    Status = HttpStatusCode.NotFound.ToString(),
+                    Message = "Data Not Found"
+                });
+            }
+
+            Account toUpdate = accountDto;
+            toUpdate.CreatedDate = entity.CreatedDate;
+
+            _accountRepository.Update(toUpdate);
+
+            return Ok(new ResponseOKHandler<string>("Data Updated"));
         }
-
-        Account toUpdate = accountDto;
-        toUpdate.CreatedDate = entitiy.CreatedDate;
-
-        var result = _accountRepository.Update(toUpdate);
-
-        if (!result)
+        catch (ExceptionHandler ex)
         {
-            return BadRequest("Failed to update data");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = "Failed to create data",
+                Error = ex.Message
+            });
         }
-
-        return Ok("Data Updated");
     }
 
-    [HttpDelete]
+    [HttpDelete("{guid}")]
     public IActionResult Delete(Guid guid)
     {
-        var entity = _accountRepository.GetByGuid(guid);
-        if (entity is null)
+        try
         {
-            return NotFound("Id Not Found");
-        }
+            var entity = _accountRepository.GetByGuid(guid);
+            if (entity is null)
+            {
+                return NotFound(new ResponseErrorHandler
+                {
+                    Code = StatusCodes.Status404NotFound,
+                    Status = HttpStatusCode.NotFound.ToString(),
+                    Message = "Data Not Found"
+                });
+            }
 
-        var result = _accountRepository.Delete(entity);
-        if (!result)
+            _accountRepository.Delete(entity);
+
+            return Ok(new ResponseOKHandler<string>("Data Deleted"));
+        }
+        catch (ExceptionHandler ex)
         {
-            return BadRequest("Failed to delete data");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = "Failed to create data",
+                Error = ex.Message
+            });
         }
-
-        return Ok("Data Deleted");
     }
 }
