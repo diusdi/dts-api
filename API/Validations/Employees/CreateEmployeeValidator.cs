@@ -8,24 +8,25 @@ public class CreateEmployeeValidator : AbstractValidator<CreateEmployeeDto>
     public CreateEmployeeValidator()
     {
         RuleFor(e => e.FirstName)
-           .NotEmpty();
+           .NotEmpty().WithMessage("Tidak Boleh Kosong");
 
         RuleFor(e => e.BirthDate)
-           .NotEmpty();
+           .NotEmpty().WithMessage("Tidak Boleh Kosong");
 
         RuleFor(e => e.Gender)
-           .NotEmpty()
+           .NotEmpty().WithMessage("Tidak Boleh Kosong")
            .IsInEnum();
 
-        RuleFor(e => e.HiringDate).NotEmpty();
+        RuleFor(e => e.HiringDate)
+            .NotEmpty().WithMessage("Tidak Boleh Kosong"); 
 
         RuleFor(e => e.Email)
            .NotEmpty().WithMessage("Tidak Boleh Kosong")
            .EmailAddress().WithMessage("Format Email Salah");
 
         RuleFor(e => e.PhoneNumber)
-           .NotEmpty()
-           .MinimumLength(10)
-           .MaximumLength(20);
+           .NotEmpty().WithMessage("Tidak Boleh Kosong")
+           .MinimumLength(10).WithMessage("Tidak Boleh Kurang Dari 10 Digit")
+           .MaximumLength(20).WithMessage("Tidak Boleh Melebihi 20 Digit");
     }
 }

@@ -8,9 +8,9 @@ public class CreateAccountRoleValidator : AbstractValidator<CreateAccountRoleDto
     public CreateAccountRoleValidator()
     {
         RuleFor(e => e.AccountGuid)
-           .NotEmpty();
+           .NotEmpty().WithMessage("Tidak Boleh Kosong");
 
         RuleFor(e => e.RoleGuid)
-           .NotEmpty();
+           .NotEmpty().WithMessage("Tidak Boleh Kosong");
     }
 }

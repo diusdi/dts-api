@@ -8,16 +8,17 @@ public class CreateAccountValidator : AbstractValidator<CreateAccountDto>
     public CreateAccountValidator()
     {
         RuleFor(e => e.Password)
-           .NotEmpty()
+           .NotEmpty().WithMessage("Tidak Boleh Kosong")
            .MinimumLength(8);
 
         RuleFor(e => e.Otp)
-           .NotEmpty();
+           .NotEmpty().WithMessage("Tidak Boleh Kosong");
 
         RuleFor(e => e.IsUsed)
-           .NotEmpty()
+           .NotEmpty().WithMessage("Tidak Boleh Kosong")
            .IsInEnum();
 
-        RuleFor(e => e.ExpiredTime).NotEmpty();
+        RuleFor(e => e.ExpiredTime)
+            .NotEmpty().WithMessage("Tidak Boleh Kosong");
     }
 }
