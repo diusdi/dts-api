@@ -1,4 +1,5 @@
 ﻿using API.Models;
+using API.Utilities.Handlers;
 
 namespace API.DTOs.Accounts
 {
@@ -12,10 +13,12 @@ namespace API.DTOs.Accounts
 
         public static implicit operator Account(CreateAccountDto createAccountDto)
         {
+            string hashedPassword = HasingHandler.HashPassword(createAccountDto.Password);
+
             return new Account
             {
                 Guid = createAccountDto.Guid,
-                Password = createAccountDto.Password,
+                Password = hashedPassword,
                 Otp = createAccountDto.Otp,
                 IsUsed = createAccountDto.IsUsed,
                 ExpiredTime = createAccountDto.ExpiredTime,

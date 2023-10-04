@@ -1,8 +1,9 @@
-﻿using API.Contracts;
+﻿using System.Net;
+using API.Contracts;
 using API.DTOs.Employees;
 using API.Models;
+using API.Utilities.Handlers;
 using Microsoft.AspNetCore.Mvc;
-using System;
 
 namespace API.Controllers;
 
@@ -23,11 +24,17 @@ public class EmployeeController : ControllerBase
         var result = _employeeRepository.GetAll();
         if (!result.Any())
         {
-            return NotFound("Data Not Found");
+            return NotFound(new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status404NotFound,
+                Status = HttpStatusCode.NotFound.ToString(),
+                Message = "Data Not Found"
+            });
         }
 
         var data = result.Select(x => (EmployeeDto)x);
-        return Ok(data);
+
+        return Ok(new ResponseOKHandler<IEnumerable<EmployeeDto>>(data));
     }
 
     [HttpGet("{guid}")]
@@ -36,61 +43,104 @@ public class EmployeeController : ControllerBase
         var result = _employeeRepository.GetByGuid(guid);
         if (result is null)
         {
-            return NotFound("Id Not Found");
+            return NotFound(new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status404NotFound,
+                Status = HttpStatusCode.NotFound.ToString(),
+                Message = "Data Not Found"
+            });
         }
-        return Ok((EmployeeDto)result);
+
+        return Ok(new ResponseOKHandler<EmployeeDto>((EmployeeDto)result));
     }
 
     [HttpPost]
     public IActionResult Create(CreateEmployeeDto employeeDto)
     {
-        var result = _employeeRepository.Create(employeeDto);
-        if (result is null)
+        try
         {
-            return BadRequest("Failed to create data");
-        }
+            Employee toCreate = employeeDto;
+            var result = _employeeRepository.Create(toCreate);
 
-        return Ok((EmployeeDto)result);
+            return Ok(new ResponseOKHandler<EmployeeDto>((EmployeeDto)result));
+        }
+        catch (ExceptionHandler ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = "Failed to create data",
+                Error = ex.Message
+            });
+        }
     }
 
     [HttpPut]
     public IActionResult Update(EmployeeDto employeeDto)
     {
-        var entitiy = _employeeRepository.GetByGuid(employeeDto.Guid);
-
-        if (entitiy is null)
+        try
         {
-            return NotFound("Id Not Found");
+            var entity = _employeeRepository.GetByGuid(employeeDto.Guid);
+            if (entity is null)
+            {
+                return NotFound(new ResponseErrorHandler
+                {
+                    Code = StatusCodes.Status404NotFound,
+                    Status = HttpStatusCode.NotFound.ToString(),
+                    Message = "Data Not Found"
+                });
+            }
+
+            Employee toUpdate = employeeDto;
+            toUpdate.Nik = entity.Nik;
+            toUpdate.CreatedDate = entity.CreatedDate;
+
+            _employeeRepository.Update(toUpdate);
+
+            return Ok(new ResponseOKHandler<string>("Data Updated"));
         }
-
-        Employee toUpdate = employeeDto;
-        toUpdate.CreatedDate = entitiy.CreatedDate;
-
-        var result = _employeeRepository.Update(toUpdate);
-
-        if (!result)
+        catch (ExceptionHandler ex)
         {
-            return BadRequest("Failed to update data");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = "Failed to create data",
+                Error = ex.Message
+            });
         }
-
-        return Ok("Data Updated");
     }
 
-    [HttpDelete]
+    [HttpDelete("{guid}")]
     public IActionResult Delete(Guid guid)
     {
-        var entity = _employeeRepository.GetByGuid(guid);
-        if (entity is null)
+        try
         {
-            return NotFound("Id Not Found");
-        }
+            var entity = _employeeRepository.GetByGuid(guid);
+            if (entity is null)
+            {
+                return NotFound(new ResponseErrorHandler
+                {
+                    Code = StatusCodes.Status404NotFound,
+                    Status = HttpStatusCode.NotFound.ToString(),
+                    Message = "Data Not Found"
+                });
+            }
 
-        var result = _employeeRepository.Delete(entity);
-        if (!result)
+            _employeeRepository.Delete(entity);
+
+            return Ok(new ResponseOKHandler<string>("Data Deleted"));
+        }
+        catch (ExceptionHandler ex)
         {
-            return BadRequest("Failed to delete data");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ResponseErrorHandler
+            {
+                Code = StatusCodes.Status500InternalServerError,
+                Status = HttpStatusCode.InternalServerError.ToString(),
+                Message = "Failed to create data",
+                Error = ex.Message
+            });
         }
-
-        return Ok("Data Deleted");
     }
 }
